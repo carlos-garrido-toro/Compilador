@@ -17,8 +17,8 @@ fi
 
 # DEFINIMOS LAS RUTAS
 
-SRC_DIR="Compilador/src"
-OUT_DIR="Compilador/out/production/Compilador"
+SRC_DIR="src"
+OUT_DIR="out/production/Compilador"
 LIB_DIR="lib"
 OUTPUT_FILES="ArchivoCompilacion"
 ASM_FILE="5_codigo_asm.s"
