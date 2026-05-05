@@ -1,0 +1,137 @@
+// ==========================================
+// TEST DE TIPOS DE DATOS Y TUPLAS (ARRAYS)
+// ==========================================
+
+// --- 1. Declaraciones Globales ---
+int n;
+bool b;
+char c;
+
+// Simulamos un array de 3 elementos 
+// Por ejemplo: [ID, Edad, Nota]
+char tuplaDatos[3]; 
+
+// Procedimiento auxiliar para separar tests
+void linea(int id) {
+    imprimir('\n');
+    imprimir('-');
+    
+    imprimir(id);
+    imprimir('-');
+    imprimir('\n');
+}
+
+main() {
+    // -----------------------------------------
+    // TEST 1: ENTEROS (INT)
+    // -----------------------------------------
+    linea(1);
+    n = 10;
+    n = (n * 2) + 5;  // 10*2 + 5 = 25
+    imprimir(n);      // Esperado: 25
+
+    imprimir('\n');
+    
+    n = n / 5;        // 25 / 5 = 5
+    imprimir(n);      // Esperado: 5
+
+    // -----------------------------------------
+    // TEST 2: LÓGICOS (BOOL)
+    // -----------------------------------------
+    linea(2);
+    
+    // Prueba de TRUE
+    b = true;
+    if (b) {
+        imprimir(1); // Esperado: 1
+    }
+
+    imprimir('\n');
+
+    // Prueba de FALSE y NOT (!)
+    b = !b; // Ahora es false
+    if (b) {
+        imprimir(666); // ERROR: No debería entrar aquí
+    } else {
+        imprimir(0);   // Esperado: 0
+    }
+
+    imprimir('\n');
+
+    // Prueba de Expresiones Lógicas (AND/OR)
+    // true OR false -> true
+    if (true || false) {
+        imprimir(11);  // Esperado: 11
+    }
+
+    imprimir('\n');
+
+    // true AND false -> false
+    if (true && false) {
+        imprimir(666);
+    } else {
+        imprimir(0);  // Esperado: 0
+    }
+
+
+    // -----------------------------------------
+    // TEST 3: CARACTERES (CHAR)
+    // -----------------------------------------
+    linea(3);
+    
+    c = 'A';           // ASCII 65
+    imprimir(c);       // Esperado: A
+    
+    // Prueba de compatibilidad Int <-> Char
+    // 'A' (65) + 1 = 'B' (66)
+    c = c + 1;         
+    imprimir(c);       // Esperado: B
+
+    // Asignar un número a un char (Casting implícito)
+    c = 90;            // ASCII de 'Z'
+    imprimir(c);       // Esperado: Z
+
+    // -----------------------------------------
+    // TEST 4: TUPLAS / ARRAYS
+    // -----------------------------------------
+    linea(4);
+
+    // Llenamos la "tupla"
+    tuplaDatos[0] = 'p'; // ID
+    tuplaDatos[1] = 'a';  // Edad
+    tuplaDatos[2] = 'b';   // Nota
+
+    // Leemos los datos
+    imprimir(tuplaDatos[0]); // 101
+    imprimir(tuplaDatos[1]); // 20
+    imprimir(tuplaDatos[2]); // 9
+
+    // Modificamos un valor dentro de la tupla
+    tuplaDatos[2] = tuplaDatos[2] + 1; // Subir nota a 10
+    imprimir(tuplaDatos[2]); // 10
+
+    // -----------------------------------------
+    // TEST 5: OPERACIONES MIXTAS
+    // -----------------------------------------
+    linea(5);
+    
+    // Usar un valor de la tupla para aritmética
+    n = tuplaDatos[1] * 2; // 20 * 2 = 40
+    
+    imprimir(n);
+    imprimir('\n');
+
+    // Usar lógica para modificar char
+    b = n > 30; // 40 > 30 -> true
+    
+    if (b) {
+        c = 'Y'; // Yes
+        
+        imprimir(c);
+        imprimir('\n');
+    } else {
+        c = 'N'; // No
+        imprimir(c);
+        imprimir('\n');
+    }
+}

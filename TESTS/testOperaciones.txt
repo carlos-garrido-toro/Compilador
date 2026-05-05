@@ -1,0 +1,121 @@
+// ==========================================
+// TEST GENERAL DE FUNCIONALIDADES
+// ==========================================
+
+// --- 1. Declaración de Globales ---
+int globalA;
+int globalB;
+
+// --- 2. Procedimientos y Funciones ---
+
+// Procedimiento (void) con parámetro
+void separador(int n) {
+    imprimir('\n');
+    imprimir('-');
+    imprimir(n);
+    imprimir('-');
+    imprimir('\n');
+}
+
+// Función con retorno (int) y parámetros
+int suma(int a, int b) {
+    return a + b;
+}
+
+// Función con lógica (bool)
+bool esPar(int n) {
+    if (n % 2 == 0) {
+        return true;
+    }
+    return false;
+}
+
+// --- 3. Cuerpo Principal ---
+main() {
+    // Declaración de variables locales
+    int i;
+    int acumulador;
+    char letra;
+
+    // -----------------------------------------
+    // TEST 1: Asignación y Variables Globales
+    // -----------------------------------------
+    separador(1);
+    
+    globalA = 10;
+    globalB = 20;
+    
+    // Llamada a función con retorno
+    acumulador = suma(globalA, globalB); // 10 + 20 = 30
+    imprimir(acumulador); // Esperado: 30
+    imprimir('\n');
+
+    // -----------------------------------------
+    // TEST 2: Condicional (IF / ELSE)
+    // -----------------------------------------
+    separador(2);
+    
+    // Usamos el resultado de una función en el IF
+    if (esPar(acumulador)) { // 30 es par -> true
+        imprimir(1); // ÉXITO
+        imprimir('\n');
+    } else {
+        imprimir(0);
+        imprimir('\n');
+    }
+
+    if (esPar(5)) { // 5 es impar -> false
+        imprimir(0);
+        imprimir('\n');
+    } else {
+        imprimir(1); // ÉXITO
+        imprimir('\n');
+    }
+
+    // -----------------------------------------
+    // TEST 3: Bucle WHILE
+    // -----------------------------------------
+    separador(3);
+    
+    i = 3;
+    while (i > 0) {
+        imprimir(i);
+        imprimir('\n');
+        i = i - 1;
+    }
+    // Esperado: 3, 2, 1
+
+    // -----------------------------------------
+    // TEST 4: Bucle FOR
+    // -----------------------------------------
+    separador(4);
+    
+    acumulador = 0;
+    // Sumatorio de 0 a 4: 0+1+2+3+4 = 10
+    for (i = 0; i <= 4; i = i + 1) {
+        acumulador = acumulador + i;
+    }
+    imprimir(acumulador); // Esperado: 10
+    imprimir('\n');
+
+    // -----------------------------------------
+    // TEST 5: SWITCH
+    // -----------------------------------------
+    separador(5);
+    
+    letra = 'B'; // Asignamos un char
+    
+    switch(letra) {
+        case 'A': 
+            imprimir(100); 
+            imprimir('\n');
+            break;
+        case 'B': 
+            imprimir(200); // Esperado: Entra aquí
+            imprimir('\n');
+            break;
+        default: 
+            imprimir(300);
+            imprimir('\n');
+    }
+}

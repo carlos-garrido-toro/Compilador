@@ -1,0 +1,80 @@
+// ==========================================
+// TEST DE ENTRADA / SALIDA (CON ERRORES SINTÁCTICOS)
+// ==========================================
+
+// Variables globales
+int num1;
+int num2      // <--- ERROR 1: Falta el punto y coma final
+int resultado;
+char operacion;
+
+// Variables para el texto "HOLA"
+char texto[5];
+int i;
+
+main() {
+    // -----------------------------------------
+    // 1. ESCRIBIR TEXTO
+    // -----------------------------------------
+    
+    texto[0] = 'H';
+    texto[1] 'o';      // <--- ERROR 2: Falta el operador de asignación '='
+    texto[2] = 'l';
+    texto[3] = 'a';
+    texto[4] = '\n';
+
+    // Imprimimos el saludo
+    // <--- ERROR 3: Falta el punto y coma después de "i < 5"
+    for (i = 0; i < 5 i = i + 1) { 
+        imprimir(texto[i]);
+    }
+    
+    imprimir('-'); 
+    
+    // -----------------------------------------
+    // 2. LECTURA DE DATOS
+    // -----------------------------------------
+    
+    imprimir('1'); 
+    imprimir(':');
+    leer(num1); 
+
+    imprimir('O');
+    imprimir('p');
+    imprimir(':');
+    leer(operacion;   // <--- ERROR 4: Falta el paréntesis de cierre ')'
+
+    imprimir('2');
+    imprimir(':');
+    leer(num2); 
+
+    // -----------------------------------------
+    // 3. PROCESAMIENTO
+    // -----------------------------------------
+    
+    resultado = 0;
+
+    switch(operacion) {
+        case '+'      // <--- ERROR 5: Faltan los dos puntos ':'
+            resultado = num1 + num2;
+            break;
+        case '-':
+            resultado = num1 - num2;
+            break;
+        case '*':
+            resultado = num1 * num2;
+            break;
+        case '/':
+            resultado = num1 / num2;
+            break;
+        default:
+            imprimir('E');
+    }
+
+    // -----------------------------------------
+    // 4. RESULTADO
+    // -----------------------------------------
+    imprimir('=');
+    imprimir(resultado);
+
+// <--- ERROR 6: Falta la llave de cierre '}' del main

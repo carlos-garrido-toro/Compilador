@@ -1,0 +1,626 @@
+package Parser;
+
+import java_cup.runtime.*;
+import java_cup.runtime.Symbol;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import Errores.GestorErrores;
+import Simbolos.*;
+import ArbolSintactico.*;
+
+
+parser code {:
+
+    // Sobreescribimos syntax_error para dar mensajes más inteligentes
+        public void syntax_error(Symbol s) {
+                List<Integer> ids = expected_token_ids();
+                LinkedList<String> listaNombres = new LinkedList<>();
+                boolean faltaPuntoYComa = false;
+                boolean esperaLlaveCierre = false;
+
+                for (Integer id : ids) {
+                    if (id >= 0 && id < sym.terminalNames.length) {
+                        String nombre = sym.terminalNames[id];
+
+                        // Banderas
+                        if (nombre.equals("PUNTO_COMA")) faltaPuntoYComa = true;
+                        if (nombre.equals("LLAVE_DER")) esperaLlaveCierre = true;
+
+                        // TRADUCTOR DE TOKENS A SÍMBOLOS LEGIBLES
+                        switch(nombre) {
+                            // Básicos
+                            case "NUMERO": listaNombres.add("un número"); break;
+                            case "ID": listaNombres.add("un identificador"); break;
+
+                            // Delimitadores
+                            case "PUNTO_COMA": listaNombres.add("';'"); break;
+                            case "LPAREN": listaNombres.add("'('"); break;
+                            case "RPAREN": listaNombres.add("')'"); break;
+                            case "LLAVE_IZQ": listaNombres.add("'{'"); break;
+                            case "LLAVE_DER": listaNombres.add("'}'"); break;
+                            case "CORCH_IZQ": listaNombres.add("'['"); break;
+                            case "CORCH_DER": listaNombres.add("']'"); break;
+                            case "COMA": listaNombres.add("','"); break;
+                            case "DOS_PUNTOS": listaNombres.add("':'"); break;
+
+                            // Operadores y Asignación
+                            case "ASSIGN": listaNombres.add("'='"); break;
+                            case "SUMA": listaNombres.add("'+'"); break;
+                            case "RESTA": listaNombres.add("'-'"); break;
+                            case "MULT": listaNombres.add("'*'"); break;
+                            case "DIV": listaNombres.add("'/'"); break;
+
+                            // Palabras Reservadas
+                            case "T_INT": listaNombres.add("'int'"); break;
+                            case "T_CHAR": listaNombres.add("'char'"); break;
+                            case "T_BOOL": listaNombres.add("'bool'"); break;
+                            case "IF": listaNombres.add("'if'"); break;
+                            case "WHILE": listaNombres.add("'while'"); break;
+                            case "FOR": listaNombres.add("'for'"); break;
+                            case "RETURN": listaNombres.add("'return'"); break;
+
+                            // Si no está en la lista, mostramos el nombre técnico
+                            default: listaNombres.add(nombre);
+                        }
+                    }
+                }
+
+                String lexema = "";
+                if (s.value != null) {
+                    if (sym.terminalNames[s.sym].equals("LIT_CHAR") && s.value instanceof Integer) {
+                        lexema = "'" + (char)((int)s.value) + "'";
+                    } else {
+                        lexema = s.value.toString();
+                    }
+                } else {
+                    lexema = sym.terminalNames[s.sym];
+                }
+
+                String msg = "Token inesperado: " + lexema;
+
+                // MENSAJES
+                if (s.sym == sym.EOF) {
+                    msg = "Final de archivo inesperado.";
+                    if (esperaLlaveCierre) {
+                        msg += " Falta la llave de cierre '}' del main.";
+                    }
+                }
+                else if (faltaPuntoYComa) {
+                     msg = "Error de Sintaxis: Probablemente falta un punto y coma (;) antes de " + lexema;
+                }
+                else if (!listaNombres.isEmpty()) {
+                     msg += ". Se esperaba: " + listaNombres.toString();
+                }
+
+                report_error(msg, s);
+        }
+
+    public void report_error(String message, Object info) {
+        int linea = -1; int columna = -1;
+        if (info instanceof Symbol) {
+            Symbol s = (Symbol) info;
+            linea = s.left; columna = s.right;
+        }
+        GestorErrores.errorSintactico((linea+1), (columna+1), message);
+    }
+
+    public void report_fatal_error(String message, Object info) {
+        if (!message.contains("Couldn't repair")) {
+            report_error("Error fatal: " + message, info);
+        }
+    }
+:};
+
+// ACCIONES SEMÁNTICAS (Variables Globales del Parser)
+action code {:
+
+    TablaSimbolos ts = new TablaSimbolos();
+
+    // Variables auxiliares para declaraciones
+    TSB tipoActual = TSB.TS_NULL;
+    String idActual = "";
+
+    int lineaActual = 0;
+
+    // Lista para acumular declaraciones en una misma línea
+    List<NodoSentencia> declaracionesLinea = new ArrayList<>();
+:};
+
+// TERMINALES
+terminal MAIN, IF, ELSE, WHILE, FOR, SWITCH, CASE, DEFAULT, BREAK, RETURN, LEER, IMPRIMIR;
+terminal T_INT /*, T_FLOAT*/, T_CHAR, T_BOOL, T_VOID;
+terminal TRUE, FALSE;
+terminal SUMA, RESTA, MULT, DIV, MOD, ASSIGN;
+terminal IGUAL_QUE, DIFERENTE, MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL;
+terminal AND, OR, NOT;
+terminal LPAREN, RPAREN, LLAVE_IZQ, LLAVE_DER, CORCH_IZQ, CORCH_DER;
+terminal PUNTO_COMA, COMA, DOS_PUNTOS;
+
+terminal Integer NUMERO;
+terminal String  ID;
+terminal Integer  LIT_CHAR;
+
+// NO TERMINALES
+non terminal NodoBloque program, cuerpo_principal, bloque_sentencias, lista_sentencias;
+non terminal NodoBloque lista_globales;
+non terminal NodoSentencia declaracion_global, declaracion_comun, resto_declaracion;
+non terminal NodoSentencia declaracion_var_resto, lista_ids_resto, item_variable;
+non terminal Integer array_decl;
+non terminal NodoSentencia sentencia;
+non terminal NodoSentencia condicional, bucle_while, bucle_for, return_stmt, entrada_salida;
+non terminal NodoSwitch switch_stmt;
+non terminal List<NodoCaso> casos;
+non terminal NodoCaso caso;
+non terminal NodoSentencia for_init;
+non terminal NodoExpresion expresion, factor, lvalue;
+non terminal NodoLlamada llamada_funcion;
+non terminal List<NodoExpresion> argumentos;
+non terminal TSB tipo;
+non terminal List<NodoDeclaracion> parametros;
+non terminal NodoDeclaracion parametro;
+
+// PRECEDENCIAS
+precedence right ASSIGN;
+precedence left OR;
+precedence left AND;
+precedence left IGUAL_QUE, DIFERENTE;
+precedence left MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL;
+precedence left SUMA, RESTA;
+precedence left MULT, DIV, MOD;
+precedence right NOT;
+precedence right ELSE;
+
+// GRAMÁTICA
+
+start with program;
+
+// Unimos las globales con el cuerpo del main
+program ::= lista_globales:g cuerpo_principal:main
+            {:
+               g.agregar(main);
+               RESULT = g;
+               // DEBUG
+               // System.out.println("--- AST GENERADO CORRECTAMENTE ---");
+            :}
+          | cuerpo_principal:main
+            {:
+               RESULT = main;
+               // DEBUG
+               // System.out.println("--- AST GENERADO CORRECTAMENTE ---");
+            :}
+          ;
+
+// Lista de declaraciones globales
+lista_globales ::= lista_globales:l declaracion_global:d
+                 {:
+                    if (d != null) {
+                        if (d instanceof NodoBloque) {
+                            l.sentencias.addAll(((NodoBloque)d).sentencias);
+                        } else {
+                            l.agregar(d);
+                        }
+                    }
+                    RESULT = l;
+                 :}
+                 | declaracion_global:d
+                 {:
+                    NodoBloque b = new NodoBloque(d != null ? d.linea : 0, 0);
+                    if (d != null) {
+                        if (d instanceof NodoBloque) {
+                             b.sentencias.addAll(((NodoBloque)d).sentencias);
+                        } else {
+                             b.agregar(d);
+                        }
+                    }
+                    RESULT = b;
+                 :}
+                 ;
+
+declaracion_global ::=
+      // Variables o Funciones
+      declaracion_comun:d
+      {: RESULT = d; :}
+    | T_VOID ID:id LPAREN parametros:p RPAREN LLAVE_IZQ bloque_sentencias:b LLAVE_DER
+      {: RESULT = new NodoFuncion(id, TSB.TS_VOID, p, b, idleft, idright); :}
+    | error PUNTO_COMA
+      {:
+         System.out.println("   [Recuperación] Saltando declaración global mal formada.");
+         RESULT = null;
+      :}
+    ;
+
+declaracion_comun ::= tipo:t ID:id
+    {:
+       tipoActual = t;
+       idActual = id;
+       lineaActual = idleft;
+       declaracionesLinea = new ArrayList<>();
+    :}
+    resto_declaracion:r
+    {: RESULT = r; :}
+    ;
+
+resto_declaracion ::=
+      // Es una FUNCIÓN con retorno
+      LPAREN parametros:p RPAREN LLAVE_IZQ bloque_sentencias:b LLAVE_DER
+      {:
+      // DEBUG
+      //   System.out.println("-> Declarando función: " + idActual);
+         RESULT = new NodoFuncion(idActual, tipoActual, p, b, bleft, bright);
+      :}
+      // Es una VARIABLE
+    | declaracion_var_resto:d
+      {: RESULT = d; :}
+    ;
+
+// GESTIÓN DE VARIABLES
+declaracion_var_resto ::=
+      // Caso int a;
+      PUNTO_COMA
+      {:
+         ts.poner(idActual, new Descripcion(Descripcion.Categoria.DVAR, tipoActual));
+
+         NodoDeclaracion decl = new NodoDeclaracion(idActual, tipoActual, lineaActual, 0);
+         declaracionesLinea.add(decl);
+         NodoBloque b = new NodoBloque(0,0);
+         b.sentencias.addAll(declaracionesLinea);
+         RESULT = b;
+      :}
+      // Caso int a = 5;
+    | ASSIGN expresion:e PUNTO_COMA
+      {:
+         ts.poner(idActual, new Descripcion(Descripcion.Categoria.DVAR, tipoActual));
+
+         NodoDeclaracion decl = new NodoDeclaracion(idActual, tipoActual, lineaActual, 0);
+         decl.inicializacion = e;
+         declaracionesLinea.add(decl);
+         NodoBloque b = new NodoBloque(0,0);
+         b.sentencias.addAll(declaracionesLinea);
+         RESULT = b;
+      :}
+
+    // ARRAY SOLO (int v[5];)
+    | array_decl:tam PUNTO_COMA
+      {:
+         Descripcion d = new Descripcion(Descripcion.Categoria.DVAR, TSB.TS_ARRAY);
+         d.tamano = tam;
+         ts.poner(idActual, d);
+
+         NodoDeclaracion decl = new NodoDeclaracion(idActual, tipoActual, lineaActual, 0);
+         decl.tamanoArray = tam;
+         declaracionesLinea.add(decl);
+
+         NodoBloque b = new NodoBloque(0,0);
+         b.sentencias.addAll(declaracionesLinea);
+         RESULT = b;
+      :}
+
+    // ARRAY Y MÁS (int v[5], x;)
+    | array_decl:tam COMA lista_ids_resto PUNTO_COMA
+      {:
+         Descripcion d = new Descripcion(Descripcion.Categoria.DVAR, TSB.TS_ARRAY);
+         d.tamano = tam;
+         ts.poner(idActual, d);
+
+         NodoDeclaracion decl = new NodoDeclaracion(idActual, tipoActual, lineaActual, 0);
+         decl.tamanoArray = tam;
+         declaracionesLinea.add(decl);
+
+         NodoBloque b = new NodoBloque(0,0);
+         b.sentencias.addAll(declaracionesLinea);
+         RESULT = b;
+      :}
+
+    // Caso int a, b, c;
+    | COMA
+      {:
+         ts.poner(idActual, new Descripcion(Descripcion.Categoria.DVAR, tipoActual));
+
+         NodoDeclaracion decl = new NodoDeclaracion(idActual, tipoActual, lineaActual, 0);
+         declaracionesLinea.add(decl);
+      :}
+      lista_ids_resto:l PUNTO_COMA
+      {:
+         NodoBloque b = new NodoBloque(0,0);
+         b.sentencias.addAll(declaracionesLinea);
+         RESULT = b;
+      :}
+
+    // Caso int a = 5, b;
+    | ASSIGN expresion:e COMA
+      {:
+         ts.poner(idActual, new Descripcion(Descripcion.Categoria.DVAR, tipoActual));
+
+         NodoDeclaracion decl = new NodoDeclaracion(idActual, tipoActual, lineaActual, 0);
+         decl.inicializacion = e;
+         declaracionesLinea.add(decl);
+      :}
+      lista_ids_resto:l PUNTO_COMA
+      {:
+         NodoBloque b = new NodoBloque(0,0);
+         b.sentencias.addAll(declaracionesLinea);
+         RESULT = b;
+      :}
+    ;
+
+array_decl ::= CORCH_IZQ NUMERO:n CORCH_DER {: RESULT = n; :}
+             | CORCH_IZQ error CORCH_DER {: RESULT = 1; :}
+             ;
+
+lista_ids_resto ::= item_variable
+                  | lista_ids_resto COMA item_variable
+                  ;
+
+item_variable ::= ID:id
+                  {:
+                     ts.poner(id, new Descripcion(Descripcion.Categoria.DVAR, tipoActual));
+                     NodoDeclaracion decl = new NodoDeclaracion(id, tipoActual, idleft, idright);
+                     declaracionesLinea.add(decl);
+                     RESULT = decl;
+                  :}
+                | ID:id ASSIGN expresion:e
+                  {:
+                     ts.poner(id, new Descripcion(Descripcion.Categoria.DVAR, tipoActual));
+                     NodoDeclaracion decl = new NodoDeclaracion(id, tipoActual, idleft, idright);
+                     decl.inicializacion = e;
+                     declaracionesLinea.add(decl);
+                     RESULT = decl;
+                  :}
+                | ID:id array_decl:tam
+                  {:
+                     Descripcion d = new Descripcion(Descripcion.Categoria.DVAR, TSB.TS_ARRAY);
+                     d.tamano = tam;
+                     ts.poner(id, d);
+
+                     NodoDeclaracion decl = new NodoDeclaracion(id, tipoActual, idleft, idright);
+                     decl.tamanoArray = tam;
+                     declaracionesLinea.add(decl);
+                     RESULT = decl;
+                  :}
+                ;
+
+// MAIN
+cuerpo_principal ::= MAIN LPAREN RPAREN LLAVE_IZQ bloque_sentencias:b LLAVE_DER
+                   {: RESULT = b; :}
+                   ;
+
+// PARAMETROS (Funciones)
+parametros ::= parametros:l COMA parametro:p
+             {:
+                l.add(p);
+                RESULT = l;
+             :}
+             | parametro:p
+             {:
+                List<NodoDeclaracion> l = new ArrayList<>();
+                l.add(p);
+                RESULT = l;
+             :}
+             | /* Vacío */
+             {:
+                RESULT = new ArrayList<NodoDeclaracion>();
+             :}
+             ;
+
+parametro ::= tipo:t ID:id
+            {:
+               RESULT = new NodoDeclaracion(id, t, idleft, idright);
+            :}
+            ;
+
+bloque_sentencias ::= lista_sentencias:l {: RESULT = l; :}
+                    | /* Vacío */        {: RESULT = new NodoBloque(0,0); :}
+                    ;
+
+lista_sentencias ::= lista_sentencias:l sentencia:s
+                   {:
+                      if (s instanceof NodoBloque) {
+                          l.sentencias.addAll(((NodoBloque)s).sentencias);
+                      } else {
+                          l.agregar(s);
+                      }
+                      RESULT = l;
+                   :}
+                   | sentencia:s
+                   {:
+                      NodoBloque b = new NodoBloque(s != null ? s.linea : 0, 0);
+                      if (s instanceof NodoBloque) {
+                          b.sentencias.addAll(((NodoBloque)s).sentencias);
+                      } else {
+                          b.agregar(s);
+                      }
+                      RESULT = b;
+                   :}
+                   ;
+
+// SENTENCIAS
+sentencia ::=
+              tipo:t ID:id
+              {:
+                 tipoActual = t;
+                 idActual = id;
+                 lineaActual = idleft;
+                 declaracionesLinea = new ArrayList<>();
+              :}
+              declaracion_var_resto:d
+              {:
+                 RESULT = d;
+              :}
+
+            | lvalue:v ASSIGN expresion:e PUNTO_COMA
+              {:
+                 if (v instanceof NodoIdentificador) {
+                     String name = ((NodoIdentificador)v).nombre;
+                     RESULT = new NodoAsignacion(name, e, v.linea, v.columna);
+                 } else if (v instanceof NodoAccesoArray) {
+                     NodoAccesoArray acc = (NodoAccesoArray)v;
+                     RESULT = new NodoAsignacionArray(acc.nombre, acc.indice, e, v.linea, v.columna);
+                 } else {
+                     RESULT = null;
+                 }
+              :}
+            | condicional:c   {: RESULT = c; :}
+            | switch_stmt:s   {: RESULT = s; :}
+            | bucle_while:w   {: RESULT = w; :}
+            | bucle_for:f     {: RESULT = f; :}
+            | entrada_salida:io {: RESULT = io; :}
+            | return_stmt:r   {: RESULT = r; :}
+            | llamada_funcion:call PUNTO_COMA
+              {: RESULT = new NodoSentenciaLlamada(call, callleft, callright); :}
+             // Intentamos recuperar hasta el punto y coma para no comernos llaves
+            | error PUNTO_COMA{: RESULT = null;:}
+            // Recuperación general si no encuentra punto y coma
+            | error {:  RESULT = null; :} ;
+
+// Control de Flujo
+condicional ::= IF LPAREN expresion:c RPAREN LLAVE_IZQ bloque_sentencias:tb LLAVE_DER
+              {: RESULT = new NodoIf(c, tb, null, cleft, cright); :}
+              | IF LPAREN expresion:c RPAREN LLAVE_IZQ bloque_sentencias:tb LLAVE_DER ELSE LLAVE_IZQ bloque_sentencias:eb LLAVE_DER
+              {: RESULT = new NodoIf(c, tb, eb, cleft, cright); :}
+              ;
+
+bucle_while ::= WHILE LPAREN expresion:c RPAREN LLAVE_IZQ bloque_sentencias:b LLAVE_DER
+              {: RESULT = new NodoWhile(c, b, cleft, cright); :}
+              ;
+
+bucle_for ::= FOR LPAREN for_init:i PUNTO_COMA expresion:c PUNTO_COMA for_init:inc RPAREN LLAVE_IZQ bloque_sentencias:b LLAVE_DER
+              {: RESULT = new NodoFor(i, c, inc, b, cleft, cright); :}
+
+            // Si la cabecera falla (error), saltamos hasta encontrar ')' o '{'
+            | FOR LPAREN error RPAREN LLAVE_IZQ bloque_sentencias:b LLAVE_DER
+              {:
+                 System.out.println("   [Recuperación] Cabecera del FOR inválida. Se asume estructura correcta.");
+                 RESULT = new NodoFor(null, new NodoLiteral(true, TSB.TS_BOOL, 0,0), null, b, 0, 0);
+              :}
+            ;
+
+for_init    ::= lvalue:v ASSIGN expresion:e
+              {: RESULT = new NodoAsignacion(((NodoIdentificador)v).nombre, e, vleft, vright); :}
+              | /* Vacio */ {: RESULT = null; :}
+              ;
+
+switch_stmt ::= SWITCH LPAREN lvalue:disc RPAREN LLAVE_IZQ casos:lista LLAVE_DER
+              {: RESULT = new NodoSwitch(disc, lista, discleft, discright); :}
+              ;
+
+casos ::= casos:l caso:c
+        {: l.add(c); RESULT = l; :}
+        | caso:c
+        {:
+           List<NodoCaso> l = new ArrayList<>();
+           l.add(c);
+           RESULT = l;
+        :}
+        ;
+
+caso ::= CASE NUMERO:n DOS_PUNTOS lista_sentencias:b BREAK PUNTO_COMA
+       {: RESULT = new NodoCaso(new NodoLiteral(n, TSB.TS_ENTER, nleft, nright), b, nleft, nright); :}
+
+       | CASE LIT_CHAR:c DOS_PUNTOS lista_sentencias:b BREAK PUNTO_COMA
+       {: RESULT = new NodoCaso(new NodoLiteral(c, TSB.TS_CHAR, cleft, cright), b, cleft, cright); :}
+
+       | DEFAULT DOS_PUNTOS lista_sentencias:b
+       {: RESULT = new NodoCaso(null, b, bleft, bright); :}
+
+       //  RECUPERACIÓN DE ERRORES EN CASOS
+       // Si fallan los dos puntos o el valor, atrapamos el error aquí para no romper el switch entero
+       | CASE error DOS_PUNTOS lista_sentencias:b BREAK PUNTO_COMA
+       {: System.out.println("   [Recuperación] Error en el valor del CASE. Ignorando caso."); RESULT = new NodoCaso(null, new NodoBloque(0,0), 0, 0); :}
+
+       | CASE error lista_sentencias:b BREAK PUNTO_COMA
+       {: System.out.println("   [Recuperación] Error de formato en CASE (posiblemente faltan ':')."); RESULT = new NodoCaso(null, new NodoBloque(0,0), 0, 0); :}
+       ;
+
+return_stmt ::= RETURN expresion:e PUNTO_COMA
+              {: RESULT = new NodoReturn(e, eleft, eright); :}
+              | RETURN PUNTO_COMA
+              {: RESULT = new NodoReturn(null, 0, 0); :}
+              ;
+
+entrada_salida ::= LEER LPAREN lvalue:v RPAREN PUNTO_COMA
+                   {: RESULT = new NodoLeer(v, vleft, vright); :}
+                 | IMPRIMIR LPAREN expresion:e RPAREN PUNTO_COMA
+                   {: RESULT = new NodoImprimir(e, eleft, eright); :}
+                 ;
+
+// Expresiones
+expresion ::= expresion:izq SUMA expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.SUMA, izq, der, izqleft, izqright); :}
+            | expresion:izq RESTA expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.RESTA, izq, der, izqleft, izqright); :}
+            | expresion:izq MULT expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.MULT, izq, der, izqleft, izqright); :}
+            | expresion:izq DIV expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.DIV, izq, der, izqleft, izqright); :}
+            | expresion:izq MOD expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.MOD, izq, der, izqleft, izqright); :}
+            | expresion:izq AND expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.AND, izq, der, izqleft, izqright); :}
+            | expresion:izq OR expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.OR, izq, der, izqleft, izqright); :}
+            | expresion:izq IGUAL_QUE expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.IGUAL, izq, der, izqleft, izqright); :}
+            | expresion:izq DIFERENTE expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.DIFERENTE, izq, der, izqleft, izqright); :}
+            | expresion:izq MENOR expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.MENOR, izq, der, izqleft, izqright); :}
+            | expresion:izq MAYOR expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.MAYOR, izq, der, izqleft, izqright); :}
+            | expresion:izq MENOR_IGUAL expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.MENOR_IGUAL, izq, der, izqleft, izqright); :}
+            | expresion:izq MAYOR_IGUAL expresion:der
+            {: RESULT = new NodoOperacion(NodoOperacion.TipoOperador.MAYOR_IGUAL, izq, der, izqleft, izqright); :}
+
+            // OPERADORES UNARIOS
+            | NOT expresion:e
+            {: RESULT = new NodoUnario(NodoUnario.Operador.NOT, e, eleft, eright); :}
+            | RESTA expresion:e
+            {: RESULT = new NodoUnario(NodoUnario.Operador.MENOS_UNARIO, e, eleft, eright); :} %prec NOT
+
+            | LPAREN expresion:e RPAREN {: RESULT = e; :}
+            | factor:f {: RESULT = f; :}
+            ;
+
+factor ::= NUMERO:n   {: RESULT = new NodoLiteral(n, TSB.TS_ENTER, nleft, nright); :}
+         // | REAL:r     {: RESULT = new NodoLiteral(r, TSB.TS_REAL, rleft, rright); :}
+         | LIT_CHAR:c {: RESULT = new NodoLiteral(c, TSB.TS_CHAR, cleft, cright); :}
+         | TRUE       {: RESULT = new NodoLiteral(true, TSB.TS_BOOL, 0,0); :}
+         | FALSE      {: RESULT = new NodoLiteral(false, TSB.TS_BOOL, 0,0); :}
+         | lvalue:v   {: RESULT = v; :}
+         | llamada_funcion:f {: RESULT = f; :}
+         ;
+
+lvalue ::= ID:id
+           {: RESULT = new NodoIdentificador(id, idleft, idright); :}
+         | ID:id CORCH_IZQ expresion:idx CORCH_DER
+           {: RESULT = new NodoAccesoArray(id, idx, idleft, idright); :}
+         ;
+
+llamada_funcion ::= ID:id LPAREN argumentos:args RPAREN
+                  {: RESULT = new NodoLlamada(id, args, idleft, idright); :}
+                  ;
+
+argumentos ::= argumentos:l COMA expresion:e
+             {:
+                l.add(e);
+                RESULT = l;
+             :}
+             | expresion:e
+             {:
+                List<NodoExpresion> l = new ArrayList<>();
+                l.add(e);
+                RESULT = l;
+             :}
+             | /* Vacío */
+             {:
+                RESULT = new ArrayList<NodoExpresion>();
+             :}
+             ;
+
+tipo ::= T_INT   {: RESULT = TSB.TS_ENTER; :}
+
+       // | T_FLOAT {: RESULT = TSB.TS_REAL;  :}
+       | T_CHAR  {: RESULT = TSB.TS_CHAR;  :}
+       | T_BOOL  {: RESULT = TSB.TS_BOOL;  :}
+       ;

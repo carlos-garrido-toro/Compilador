@@ -1,0 +1,82 @@
+// ==========================================
+// TEST DE ERRORES SEMÁNTICOS (SINTAXIS CORRECTA)
+// ==========================================
+
+// Variable global
+int globalVar;
+
+// Función auxiliar correcta
+void funcion(int x) {
+    imprimir(x);
+}
+
+main() {
+    int entero;
+    bool logico;
+    char caracter;
+    int vector[5];
+
+    // Inicialización correcta para evitar ruido
+    entero = 10;
+    logico = true;
+    caracter = 'A';
+
+    // -------------------------------------------------
+    // ERROR 1: Variable no declarada
+    // -------------------------------------------------
+        noExiste = 100;
+
+    // -------------------------------------------------
+    // ERROR 2: Variable duplicada
+    // -------------------------------------------------
+    int entero; // 'entero' ya existe en este ámbito
+
+    // -------------------------------------------------
+    // ERROR 3: Incompatibilidad de Tipos en Asignación
+    // -------------------------------------------------
+    entero = true;   // No se puede guardar bool en int
+    logico = 123;    // No se puede guardar int en bool
+
+    // -------------------------------------------------
+    // ERROR 4: Operaciones con Tipos Incorrectos
+    // -------------------------------------------------
+    // Suma aritmética: int + bool -> Error
+    entero = 10 + logico; 
+
+    // Operación lógica: int && int -> Error (espera bools)
+    if (10 && 20) {
+        imprimir(0);
+    }
+
+    // -------------------------------------------------
+    // ERROR 5: Arrays (Índices y Tipos)
+    // -------------------------------------------------
+    // Índice no entero (usando un bool)
+    vector[true] = 50;
+
+    // Asignar tipo incorrecto al contenido del array
+    vector[0] = true; 
+
+    // Intentar indexar una variable simple (no es array)
+    entero[0] = 5;
+
+    // -------------------------------------------------
+    // ERROR 6: Control de Flujo (Condiciones)
+    // -------------------------------------------------
+    // El 'if' espera una expresión booleana, no un entero
+    if (entero) {
+        imprimir(1);
+    }
+
+    // -------------------------------------------------
+    // ERROR 7: Llamadas a Funciones
+    // -------------------------------------------------
+    // Argumento de tipo incorrecto (espera int, recibe bool)
+    funcion(true);
+
+    // Número incorrecto de argumentos (espera 1, recibe 0)
+    funcion();
+    
+    // Llamar a algo que no es función (variable simple)
+    entero();
+}

@@ -1,0 +1,183 @@
+// ==========================================
+// TEST DE OPERADORES
+// ==========================================
+
+// Variable global para probar asignaciones fuera del main
+int globalCheck;
+
+// Procedimiento auxiliar (prueba parentesis y comas)
+void seccion(int id) {
+    imprimir('-');
+    imprimir(id);
+    imprimir('-');
+    imprimir('\n');
+}
+
+main() {
+    int a;
+    int b;
+    int res;
+    bool flag;
+    char c;
+    int vector[2]; // Prueba de corchetes [ ]
+
+    // -----------------------------------------
+    // 1. ARITMÉTICOS (+ - * / %)
+    // -----------------------------------------
+    seccion(1);
+    
+    a = 10;
+    b = 3;
+
+    // Suma
+    imprimir(a + b);      // 10 + 3 = 13
+    imprimir('\n');
+    // Resta
+    imprimir(a - b);      // 10 - 3 = 7
+    imprimir('\n');
+    // Multiplicación
+    imprimir(a * b);      // 10 * 3 = 30
+    imprimir('\n');
+    // División entera
+    imprimir(a / b);      // 10 / 3 = 3
+    imprimir('\n');
+    // Módulo (Resto)
+    imprimir(a % b);      // 10 % 3 = 1
+    imprimir('\n');
+
+    // Precedencia (Multiplicación antes que suma)
+    // 2 + 3 * 4 = 14
+    res = 2 + 3 * 4;
+    imprimir(res);
+    imprimir('\n');
+
+    // Uso de paréntesis para alterar precedencia
+    // (2 + 3) * 4 = 20
+    res = (2 + 3) * 4;
+    imprimir(res);
+    imprimir('\n');
+
+    // -----------------------------------------
+    // 2. RELACIONALES (== != < > <= >=)
+    // -----------------------------------------
+    seccion(2);
+
+    a = 5;
+    b = 10;
+
+    // Menor (<)
+    if (a < b) { 
+        imprimir(1); 
+        imprimir('\n');
+    } else { 
+        imprimir(0); 
+        imprimir('\n');
+    } 
+    
+    // Mayor (>)
+    if (a > b) { 
+        imprimir(1); 
+        imprimir('\n');
+    } else { 
+        imprimir(0); 
+        imprimir('\n');
+    }
+
+    // Igual (==)
+    if (a == 5) { 
+        imprimir(1); 
+        imprimir('\n');
+    } else { 
+        imprimir(0); 
+        imprimir('\n');
+    }
+
+    // Diferente (!=)
+    if (a != 5) { 
+        imprimir(1); 
+        imprimir('\n');
+    } else { 
+        imprimir(0); 
+        imprimir('\n');
+    }
+
+    // Menor o Igual (<=)
+    if (5 <= 5) { 
+        imprimir(1);
+        imprimir('\n'); 
+    } else { 
+        imprimir(0); 
+        imprimir('\n');
+    }
+
+    // Mayor o Igual (>=)
+    if (4 >= 5) { 
+        imprimir(1);
+        imprimir('\n'); 
+    } else { 
+        imprimir(0); 
+        imprimir('\n');
+    }
+
+    // -----------------------------------------
+    // 3. LÓGICOS (&& || !)
+    // -----------------------------------------
+    seccion(3);
+
+    // AND (&&): true && false -> false
+    if (true && false) { 
+        imprimir(1); 
+        imprimir('\n');
+    } else { 
+        imprimir(0); 
+        imprimir('\n');
+    }
+
+    // OR (||): false || true -> true
+    if (false || true) { 
+        imprimir(1); 
+        imprimir('\n');
+    } else { 
+        imprimir(0); 
+        imprimir('\n');
+    }
+
+    // NOT (!): !false -> true
+    flag = false;
+    if (!flag) { 
+        imprimir(1); 
+        imprimir('\n');
+    } else { 
+        imprimir(0);
+        imprimir('\n'); 
+    }
+
+    // Lógica compleja
+    // (5 < 10) AND !(10 == 10) -> true AND !true -> false
+    if ((5 < 10) && !(10 == 10)) {
+        imprimir(666); 
+        imprimir('\n');
+    } else {
+        imprimir(0); // Esperado 0
+        imprimir('\n');
+    }
+
+    // -----------------------------------------
+    // 4. ESPECIALES (Arrays, Char Escape)
+    // -----------------------------------------
+    seccion(4);
+
+    // Prueba de corchetes [ ]
+    vector[0] = 100;
+    vector[1] = 200;
+    imprimir(vector[1]); // 200
+    imprimir('\n');
+
+    // '\\t' (Tabulador, ASCII 9)
+    c = '\t';
+    imprimir(c); // tab
+
+    // Asignación simple
+    globalCheck = 777;
+    imprimir(globalCheck);
+}

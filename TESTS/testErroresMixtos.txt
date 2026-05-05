@@ -1,0 +1,49 @@
+// ==========================================
+// TEST DE ERRORES (SINTÁCTICOS Y SEMÁNTICOS)
+// ==========================================
+
+// 1. ERROR SINTÁCTICO: Asignación fuera de función
+globalX = 10;
+
+// Declaración correcta para continuar
+int globalCorrecta;
+
+main() {
+    int a;
+    bool b;
+    int v[5];
+
+    // -----------------------------------------
+    // ERRORES SEMÁNTICOS (Lógica y Tipos)
+    // -----------------------------------------
+    
+    // 2. ERROR SEMÁNTICO: Variable no declarada
+    noExiste = 50;
+
+    // 3. ERROR SEMÁNTICO: Variable duplicada
+    // 'a' ya fue declarada arriba
+    int a; 
+
+    // 4. ERROR SEMÁNTICO: Incompatibilidad de Tipos
+    // No se puede sumar un entero con un booleano (según tu lógica estricta)
+    b = true;
+    a = 10 + b; 
+
+    // 5. ERROR SEMÁNTICO: Índice de Array incorrecto
+    // El índice debe ser INT, aquí pasamos un BOOL
+    v[true] = 99;
+
+    // -----------------------------------------
+    // ERRORES SINTÁCTICOS (Forma del código)
+    // -----------------------------------------
+
+    // 6. ERROR SINTÁCTICO: Falta punto y coma
+    a = 20
+
+    // 7. ERROR SINTÁCTICO: Estructura mal formada
+    // obligatorio usar { } en los IF.
+    if (a > 0) 
+        a = 0; 
+    
+    leer(10); // Error sintactico: leer espera una variable (LValue), no un número literal
+}

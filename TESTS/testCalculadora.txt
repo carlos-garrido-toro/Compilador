@@ -1,0 +1,86 @@
+// ==========================================
+// TEST DE ENTRADA / SALIDA (CALCULADORA)
+// ==========================================
+
+// Variables para la calculadora
+int num1;
+int num2;
+int resultado;
+char operacion;
+
+// Variables para el texto "HOLA"
+char texto[5];
+int i;
+
+main() {
+    // -----------------------------------------
+    // 1. ESCRIBIR TEXTO (Simulación con Array)
+    // -----------------------------------------
+    texto[0] = 'H';
+    texto[1] = 'o';
+    texto[2] = 'l';
+    texto[3] = 'a';
+    texto[4] = '\n';
+
+    // Imprimimos el saludo
+    for (i = 0; i < 5; i = i + 1) {
+        imprimir(texto[i]);
+    }
+
+    
+    // -----------------------------------------
+    // 2. LECTURA DE DATOS (INPUT)
+    // -----------------------------------------
+    
+    // Pide Num 1 (Mostramos '1' ':' para indicar input)
+    imprimir('1'); 
+    imprimir(':');
+    leer(num1); // <-- EL PROGRAMA SE PAUSA AQUÍ ESPERANDO UN INT
+
+    // Pide Operador (Mostramos 'O' 'p' ':')
+    imprimir('O');
+    imprimir('p');
+    imprimir(':');
+    leer(operacion); // <-- ESPERA UN CHAR (+, -, *, /)
+
+    // Pide Num 2 (Mostramos '2' ':')
+    imprimir('2');
+    imprimir(':');
+    leer(num2); // <-- ESPERA OTRO INT
+
+    // -----------------------------------------
+    // 3. PROCESAMIENTO
+    // -----------------------------------------
+    
+    // Inicializamos resultado
+    resultado = 0;
+
+    switch(operacion) {
+        case '+':
+            resultado = num1 + num2;
+            break;
+        case '-':
+            resultado = num1 - num2;
+            break;
+        case '*':
+            resultado = num1 * num2;
+            break;
+        case '/':
+            resultado = num1 / num2;
+            break;
+	case '%':
+	    resultado = num1 % num2;
+ 	    break;
+        default:
+            // 'E' (Error)
+            imprimir('E');
+	    imprimir('\n');
+    }
+
+    // -----------------------------------------
+    // 4. RESULTADO (OUTPUT)
+    // -----------------------------------------
+    imprimir('=');
+    imprimir(resultado);
+    imprimir('\n');
+}

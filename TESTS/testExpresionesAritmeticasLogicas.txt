@@ -1,0 +1,154 @@
+// ==========================================
+// TEST DE EXPRESIONES ARITMÉTICAS Y LÓGICAS
+// ==========================================
+
+// Variables Globales para probar mezcla con locales
+int g;
+
+// Procedimiento auxiliar para separar secciones
+void linea(int id) {
+    imprimir('\n');
+    imprimir('-');
+    imprimir(id);
+    imprimir('-');
+    imprimir('\n');
+}
+
+main() {
+    int a; 
+    int b; 
+    int res;
+    bool cond;
+    char letra;
+
+    // -----------------------------------------
+    // TEST 1: ARITMÉTICA BÁSICA Y PRECEDENCIA
+    // -----------------------------------------
+    linea(1);
+    
+    a = 10;
+    b = 5;
+    g = 2;
+
+    // Prueba básica: Variables + Literales
+    res = a + b - 3;      // 10 + 5 - 3 = 12
+    imprimir(res);
+    imprimir('\n');
+
+    // Prueba de Precedencia (Multiplicación antes que Suma)
+    // Sin paréntesis: 10 + 5 * 2 = 10 + 10 = 20
+    res = a + b * g;      
+    imprimir(res);        // Esperado: 20
+    imprimir('\n');
+
+    // Prueba de Paréntesis (Forzar Suma antes)
+    // Con paréntesis: (10 + 5) * 2 = 15 * 2 = 30
+    res = (a + b) * g;    
+    imprimir(res);        // Esperado: 30
+    imprimir('\n');
+
+    // Prueba de División y Módulo
+    // 10 / 5 = 2
+    imprimir(a / b);
+    imprimir('\n');      
+    // 10 % 3 = 1 (Usando literal)
+    imprimir(a % 3);      
+    imprimir('\n');
+
+    // -----------------------------------------
+    // TEST 2: ARITMÉTICA DE CARACTERES
+    // -----------------------------------------
+    linea(2);
+
+    letra = 'A';          // Literal Char
+    imprimir(letra);      // Esperado: A (o 65)
+
+    // Sumar literal entero a variable char
+    letra = letra + 1;    // 'A' + 1 = 'B'
+    imprimir(letra);      // Esperado: B (o 66)
+
+    // Restar dos variables (una char y una int)
+    letra = letra + 2;    // 'B' + 2 = 'D'
+    imprimir(letra);      // Esperado: D
+
+    // -----------------------------------------
+    // TEST 3: LÓGICA BOOLEANA (AND / OR / NOT)
+    // -----------------------------------------
+    linea(3);
+
+    // Literal TRUE
+    if (true) { 
+	imprimir(1);
+        imprimir('\n');
+    } else { 
+        imprimir(0); 
+        imprimir('\n');
+    }
+
+    // Literal FALSE
+    if (false) { 
+	imprimir(1); 
+    	imprimir('\n');
+    } else { 
+	imprimir(0); 
+	imprimir('\n');
+    }
+
+    // Operador OR (||) -> true || false = true
+    cond = true || false;
+    if (cond) { 
+	imprimir(1); 
+	imprimir('\n');
+    } else { 
+	imprimir(0);
+	imprimir('\n'); 
+    }
+
+    // Operador AND (&&) -> true && false = false
+    cond = true && false;
+    if (cond) { 
+	imprimir(1); 
+	imprimir('\n');
+    } else { 
+	imprimir(0); 
+	imprimir('\n');
+    }
+
+    // Operador NOT (!) -> !false = true
+    if (!false) { 
+	imprimir(1); 
+	imprimir('\n');
+    }
+
+    // -----------------------------------------
+    // TEST 4: EXPRESIONES (RELACIONALES + LÓGICAS)
+    // -----------------------------------------
+    linea(4);
+
+    a = 50;
+    b = 100;
+
+    // Expresión: (a < b) Y (a > 0) -> true AND true -> true
+    if ((a < b) && (a > 0)) {
+        imprimir(1); // ÉXITO
+	imprimir('\n');
+    } else {
+        imprimir(0);
+	imprimir('\n');
+    }
+
+    // Expresión mixta con aritmética: (50 * 2 == 100) -> true
+    if ((a * 2) == b) {
+        imprimir(2); // ÉXITO
+	imprimir('\n');
+    }
+
+    // Expresión compleja false: (100 < 50) O (100 != 100) -> false OR false -> false
+    if ((b < a) || (b != 100)) {
+        imprimir(666); // ERROR
+	imprimir('\n');
+    } else {
+        imprimir(3); // ÉXITO
+	imprimir('\n');
+    }
+}
